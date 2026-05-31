@@ -227,8 +227,48 @@ void save_into_file() {
     // 9. Close the file
     fclose(file);
 }
+
+void memory_modify() {
+    // 1. Prompt the user for location and value
+    printf("Please enter <location> <val>\n> ");
+    char input[256];
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+        return; // Handle EOF safely
+    }
+
+    unsigned int location;
+    unsigned int val;
     
-void memory_modify() { printf("Not implemented yet\n"); }       
+    // 2. Read both location and val in hexadecimal (%x)
+    if (sscanf(input, "%x %x", &location, &val) != 2) {
+        printf("Error: Invalid input format. Expected <hex location> <hex val>.\n");
+        return;
+    }
+
+    // 3. Debug output
+    if (debug_mode) {
+        fprintf(stderr, "Debug: location=%#x, val=%#x\n", location, val);
+    }
+
+    // 4. Validate that the location and unit size fit within our buffer
+    if (location + unit_size > sizeof(mem_buf)) {
+        printf("Error: Location %#x with unit size %d exceeds memory buffer bounds.\n", location, unit_size);
+        return;
+    }
+
+    // 5. Replace a unit in the memory buffer with the new value
+    unsigned char *target_ptr = &mem_buf[location];
+
+    if (unit_size == 1) {
+        *((unsigned char *)target_ptr) = (unsigned char)val;
+    } else if (unit_size == 2) {
+        *((unsigned short *)target_ptr) = (unsigned short)val;
+    } else if (unit_size == 4) {
+        *((unsigned int *)target_ptr) = (unsigned int)val;
+    } else {
+        printf("Error: Invalid unit size.\n");
+    }
+}      
 
 /* ========================================= */
 /* IMPLEMENTED FUNCTIONS                     */
