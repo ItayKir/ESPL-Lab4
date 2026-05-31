@@ -1,0 +1,5 @@
+1. Where is the entry point specified, and what is its value?
+Answer:
+
+How many sections are there in "abc"?
+Answer:
