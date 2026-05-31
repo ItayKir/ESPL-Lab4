@@ -6,7 +6,7 @@ Answer: 0x80483b0
 How many sections are there in "abc"?
 Answer: 29
 
-
+---------
 
 Task 2 Questions:
 1. Which "function" should precede main() in execution?
@@ -47,3 +47,36 @@ Step 5: Verify and Run
 1. Quit hexeditplus (Option Q).  
 2. Run readelf -h deep_thought to verify that the "Entry point address" matches your _start address.  
 3. Run ./deep_thought. It should now execute perfectly!
+
+---------
+
+Task 3:
+address: 0804841d (use readelf -s)
+size: 23
+section: 13
+
+(then do readelf -S offensive)
+addr: 08048320
+offset: 000320
+
+https://www.calculator.net/hex-calculator.html?number1=000320&c2op=%2B&number2=FD&calctype=op&x=Calculate
+
+Offset_Within_Section = (main_Value_Addr) - (Section_Addr) = 0804841d - 08048320 = FD
+main_File_Offset = (Section_Off) + Offset_Within_Section = 000320 + FD = 41D
+
+
+1. Run ./hexeditplus.
+
+2. F (Set File Name): Set it to offensive.
+
+3. U (Set Unit Size): Set it to 1 (we want to see individual instruction bytes).
+
+4. L (Load Into Memory): 
+* Location: Enter the main_File_Offset you calculated in Step 3 (in hex). (main_File_Offset=41D)
+* Length: Enter the Size you found in Step 1 (in decimal). (size=23)
+
+5. M (Memory Display):
+* Address: 0 (read from the start of your memory buffer).
+* Length: Enter the Size again. (size=23)
+
+You are now looking at the raw machine code (OpCodes) of the main function! The last byte printed should be c3, which is the x86 instruction for ret (return).
