@@ -80,3 +80,52 @@ main_File_Offset = (Section_Off) + Offset_Within_Section = 000320 + FD = 41D
 * Length: Enter the Size again. (size=23)
 
 You are now looking at the raw machine code (OpCodes) of the main function! The last byte printed should be c3, which is the x86 instruction for ret (return).
+
+
+Part 4:
+
+1. Find the buggy function in ntsc:
+
+* Run readelf -s ntsc | grep count_digits. Note its Size and its virtual Value address. [size=93, address 0804847d]
+
+* Run readelf -S ntsc to find the .text section's virtual address and file offset. [address = 08048380, offset = 000380]
+
+Offset_Within_Section = (count_digits_Value_Addr) - (Section_Addr) = 0804847d - 08048380 = FD
+count_digits_offest = (Section_Off) + Offset_Within_Section = 000380 + FD = 47D
+
+* Calculate the exact file offset for ntsc's count_digits. (Let's call this NTSC_OFFSET = 10090B7D).
+
+2. Find your new function in task4:
+
+* Run readelf -s task4 | grep count_digits. Note its Size and its virtual Value address. (Ensure this size is <= the size from step 1!)
+size = 80, address = 0000118d
+
+* Run readelf -S task4 to find the .text section offset.
+offest = 001060, address = 00001060
+
+* Calculate the exact file offset for task4's count_digits. (Let's call this TASK4_OFFSET).
+
+Offset_Within_Section = (count_digits_Value_Addr) - (Section_Addr) = 0000118d - 00001060 = 12D
+count_digits_offest = (Section_Off) + Offset_Within_Section = 118D
+
+
+3. Run ./hexeditplus
+
+4. U (Set Unit Size): Set to 1 (we are moving exact bytes).
+
+5. F (Set File Name): Enter task4
+
+6. L (Load Into Memory):
+
+* Prompt: <location> <length>
+
+* Input: Enter your TASK4_OFFSET (in hex) and the Size of your new function (in decimal). Your global mem_buf now holds the correct machine code!
+
+7. F (Set File Name): Enter ntsc (We are switching targets).
+
+8. S (Save Into File):
+
+*Prompt: <source-address> <target-location> <length>
+
+* Input: 0 <NTSC_OFFSET> <Size>
+(This takes the bytes starting at index 0 of your mem_buf and writes them into ntsc exactly over the buggy function, for the length of your new function).
