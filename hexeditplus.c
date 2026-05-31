@@ -89,9 +89,145 @@ void load_into_memory() {
     printf("Loaded %d units into memory\n", length);
 }
 
-void toggle_display_mode() { printf("Not implemented yet\n"); } 
-void memory_display() { printf("Not implemented yet\n"); }      
-void save_into_file() { printf("Not implemented yet\n"); }      
+void toggle_display_mode() {
+    if (display_mode == 0) {
+        // Currently off (hexadecimal), so turn it on (decimal)
+        display_mode = 1;
+        printf("Decimal display flag now on, decimal representation\n");
+    } else {
+        // Currently on (decimal), so turn it off (hexadecimal)
+        display_mode = 0;
+        printf("Decimal display flag now off, hexadecimal representation\n");
+    }
+}
+
+void memory_display() {
+    // Format arrays exactly as provided in the Lab 4 instructions
+    static char* hex_formats[] = {"%#hhx\n", "%#hx\n", "No such unit", "%#x\n"};
+    static char* dec_formats[] = {"%#hhd\n", "%#hd\n", "No such unit", "%#d\n"};
+
+    printf("Enter address and length\n> ");
+    char input[256];
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+        return; // Handle EOF safely
+    }
+
+    unsigned int addr;
+    int length;
+    
+    // Read address in hexadecimal (%x) and length in decimal (%d)
+    if (sscanf(input, "%x %d", &addr, &length) != 2) {
+        printf("Error: Invalid input format. Expected <hex addr> <dec length>.\n");
+        return;
+    }
+
+    if (debug_mode) {
+        fprintf(stderr, "Debug: addr=%#x, length=%d\n", addr, length);
+    }
+
+    // Determine the starting pointer: 
+    // 0 is the special case for mem_buf. Otherwise, cast addr to a physical pointer.
+    unsigned char *start_ptr = (addr == 0) ? mem_buf : (unsigned char *)addr;
+
+    // Print the appropriate header based on display_mode from Task 1b
+    if (display_mode == 1) {
+        printf("Decimal\n=======\n");
+    } else {
+        printf("Hexadecimal\n===========\n");
+    }
+
+    // Iterate through the requested length, fetching the correct unit sizes
+    for (int i = 0; i < length; i++) {
+        int val = 0;
+        
+        // Pointer arithmetic and casting to read exactly 1, 2, or 4 bytes
+        if (unit_size == 1) {
+            val = *((unsigned char *)(start_ptr + (i * unit_size)));
+        } else if (unit_size == 2) {
+            val = *((unsigned short *)(start_ptr + (i * unit_size)));
+        } else if (unit_size == 4) {
+            val = *((unsigned int *)(start_ptr + (i * unit_size)));
+        } else {
+            printf("Invalid unit size.\n");
+            return;
+        }
+
+        // Print using the predefined arrays. We subtract 1 because unit sizes 
+        // are 1, 2, 4 but array indices are 0, 1, 3.
+        if (display_mode == 1) {
+            printf(dec_formats[unit_size - 1], val);
+        } else {
+            printf(hex_formats[unit_size - 1], val);
+        }
+    }
+}
+
+void save_into_file() {
+    // 1. Check if the file name is empty
+    if (strcmp(file_name, "") == 0) {
+        printf("Error: File name is empty. Please set it first using option 'F'.\n");
+        return;
+    }
+
+    // 2. Open the file for writing (without truncating)
+    FILE *file = fopen(file_name, "r+");
+    if (file == NULL) {
+        printf("Error: Could not open file '%s'.\n", file_name);
+        return;
+    }
+
+    // 3. Prompt the user for addresses and length
+    printf("Please enter <source-address> <target-location> <length>\n> ");
+    char input[256];
+    if (fgets(input, sizeof(input), stdin) == NULL) {
+        fclose(file);
+        return; 
+    }
+
+    unsigned int source_address;
+    unsigned int target_location;
+    int length;
+    
+    // Read source and target in hexadecimal (%x) and length in decimal (%d)
+    if (sscanf(input, "%x %x %d", &source_address, &target_location, &length) != 3) {
+        printf("Error: Invalid input format. Expected <hex> <hex> <dec>.\n");
+        fclose(file);
+        return;
+    }
+
+    // 4. Debug output
+    if (debug_mode) {
+        fprintf(stderr, "Debug: file_name=%s, source_address=%#x, target_location=%#x, length=%d\n", 
+                file_name, source_address, target_location, length);
+    }
+
+    // 5. File size validation
+    fseek(file, 0, SEEK_END);        // Move cursor to the end of the file
+    long file_size = ftell(file);    // Get the exact byte count
+    
+    if (target_location > file_size) {
+        printf("Error: target-location (%#x) exceeds file size (%ld bytes).\n", target_location, file_size);
+        fclose(file);
+        return;
+    }
+
+    // 6. Navigate to the target location for writing
+    if (fseek(file, target_location, SEEK_SET) != 0) {
+        printf("Error: Could not seek to target-location %#x in file.\n", target_location);
+        fclose(file);
+        return;
+    }
+
+    // 7. Determine the source pointer based on the special '0' case
+    unsigned char *start_ptr = (source_address == 0) ? mem_buf : (unsigned char *)source_address;
+
+    // 8. Write the exact number of units to the file
+    fwrite(start_ptr, unit_size, length, file);
+
+    // 9. Close the file
+    fclose(file);
+}
+    
 void memory_modify() { printf("Not implemented yet\n"); }       
 
 /* ========================================= */
