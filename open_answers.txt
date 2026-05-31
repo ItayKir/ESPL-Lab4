@@ -1,0 +1,49 @@
+Task 0a:
+Answer by running readelf -h abc
+1. Where is the entry point specified, and what is its value?
+Answer: 0x80483b0
+
+How many sections are there in "abc"?
+Answer: 29
+
+
+
+Task 2 Questions:
+1. Which "function" should precede main() in execution?
+The function that must precede main() is _start.
+an executable doesn't just start magically at main(). 
+The operating system transfers control to the _start routine, which sets up the program's environment, initializes standard standard input/output, and pushes command-line arguments onto the stack before finally calling main(). 
+If an ELF file's entry point is mistakenly set directly to main, the program will crash because the environment wasn't properly initialized.
+
+2. What is the virtual address to which this function is loaded?
+08048350
+
+
+Task 2 fix:
+Step 1: Setup
+1. Run your ./hexeditplus program.  
+2. Press F to set the file name to deep_thought.
+3. Press U to set the unit size to 4 (since memory addresses are 4 bytes long in a 32-bit ELF).  
+
+Step 2: Read the existing (broken) entry point
+1. Press L (Load Into Memory) to load the ELF header into your buffer.  
+* Prompt: <location> <length>
+* Input: 18 1 (Offset 0x18 is the exact byte location of the Entry Point in a 32-bit ELF header, and we want to read 1 unit of 4 bytes).
+2. Press M (Memory Display) to see what is currently there.  
+* Prompt: <addr> <u units>
+* Input: 0 1 (Read 1 unit from the start of your memory buffer). You will see the broken entry point address.
+
+Step 3: Patch the memory buffer
+1. Press Y (Memory Modify) to overwrite the broken address in your buffer with the correct one.  
+* Prompt: <location> <val>
+* Input: 0 <address_of_start> (Replace <address_of_start> with the hex address you found using readelf -s in Part 1, without the 0x prefix).
+
+Step 4: Save the patch to the file
+1. Press S (Save Into File) to write your corrected memory buffer back into the deep_thought binary.  
+* Prompt: <source-address> <target-location> <length>
+* Input: 0 18 1 (Take 1 unit from source-address 0 in your buffer, and write it to the target-location 0x18 in the actual file).
+
+Step 5: Verify and Run
+1. Quit hexeditplus (Option Q).  
+2. Run readelf -h deep_thought to verify that the "Entry point address" matches your _start address.  
+3. Run ./deep_thought. It should now execute perfectly!

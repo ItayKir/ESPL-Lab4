@@ -1,6 +1,0 @@
-Answer by running readelf -h abc
-1. Where is the entry point specified, and what is its value?
-Answer: 0x80483b0
-
-How many sections are there in "abc"?
-Answer: 29
